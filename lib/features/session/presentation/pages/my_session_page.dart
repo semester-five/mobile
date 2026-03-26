@@ -1,7 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:face_locker/features/session/presentation/pages/active_session_page.dart';
+import 'package:face_locker/features/session/presentation/pages/all_sessions_page.dart';
+import 'package:face_locker/features/session/presentation/pages/completed_sessions_page.dart';
 
-class MySessionPage extends StatelessWidget {
+class MySessionPage extends StatefulWidget {
   const MySessionPage({super.key});
+
+  @override
+  State<MySessionPage> createState() => _MySessionPageState();
+}
+
+class _MySessionPageState extends State<MySessionPage> {
+  SessionFilterTab _selectedTab = SessionFilterTab.all;
+
+  void _onTabSelected(SessionFilterTab tab) {
+    if (_selectedTab == tab) {
+      return;
+    }
+
+    setState(() {
+      _selectedTab = tab;
+    });
+  }
+
+  Widget _buildTabContent() {
+    switch (_selectedTab) {
+      case SessionFilterTab.all:
+        return const AllSessionsPage();
+      case SessionFilterTab.active:
+        return const ActiveSessionsPage();
+      case SessionFilterTab.completed:
+        return const CompletedSessionsPage();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,11 +50,10 @@ class MySessionPage extends StatelessWidget {
           ),
         ),
       ),
-      body: SingleChildScrollView(
+      body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Column(
           children: [
-            // Filter tabs
             Container(
               decoration: BoxDecoration(
                 color: const Color(0xFFF3F4F6),
@@ -32,18 +62,33 @@ class MySessionPage extends StatelessWidget {
               padding: const EdgeInsets.all(4),
               child: Row(
                 children: [
-                  _FilterTab(label: 'All', isActive: true),
-                  _FilterTab(label: 'Active', isActive: false),
-                  _FilterTab(label: 'Completed', isActive: false),
+                  _FilterTab(
+                    label: 'All',
+                    isActive: _selectedTab == SessionFilterTab.all,
+                    onTap: () => _onTabSelected(SessionFilterTab.all),
+                  ),
+                  _FilterTab(
+                    label: 'Active',
+                    isActive: _selectedTab == SessionFilterTab.active,
+                    onTap: () => _onTabSelected(SessionFilterTab.active),
+                  ),
+                  _FilterTab(
+                    label: 'Completed',
+                    isActive: _selectedTab == SessionFilterTab.completed,
+                    onTap: () => _onTabSelected(SessionFilterTab.completed),
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
-            // Session card
-            _SessionCard(
-              lockerCode: 'A05',
-              dateTime: 'Jan 23, 10:00 AM',
-              status: 'Active',
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: KeyedSubtree(
+                  key: ValueKey(_selectedTab),
+                  child: _buildTabContent(),
+                ),
+              ),
             ),
           ],
         ),
@@ -52,94 +97,43 @@ class MySessionPage extends StatelessWidget {
   }
 }
 
+enum SessionFilterTab { all, active, completed }
+
 class _FilterTab extends StatelessWidget {
   final String label;
   final bool isActive;
+  final VoidCallback onTap;
 
-  const _FilterTab({required this.label, required this.isActive});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-            color: isActive ? const Color(0xFF1F2937) : const Color(0xFF6B7280),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SessionCard extends StatelessWidget {
-  final String lockerCode;
-  final String dateTime;
-  final String status;
-
-  const _SessionCard({
-    required this.lockerCode,
-    required this.dateTime,
-    required this.status,
+  const _FilterTab({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                lockerCode,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                dateTime,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF6B7280),
-                ),
-              ),
-            ],
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isActive ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(6),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFDBEAFE),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              status,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1E40AF),
-              ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+              color: isActive
+                  ? const Color(0xFF1F2937)
+                  : const Color(0xFF6B7280),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
