@@ -1,3 +1,4 @@
+import 'package:face_locker/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:flutter/material.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -76,7 +77,12 @@ class ProfilePage extends StatelessWidget {
               width: double.infinity,
               height: 48,
               child: OutlinedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const EditProfilePage()),
+                  );
+                },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF4A90E2),
                   side: const BorderSide(color: Color(0xFF4A90E2)),
