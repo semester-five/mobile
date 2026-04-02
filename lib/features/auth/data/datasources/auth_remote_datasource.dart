@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:face_locker/features/auth/data/datasources/auth_exception.dart';
 import 'package:face_locker/features/auth/data/models/login_form_dto.dart';
+import 'package:face_locker/features/auth/data/models/login_response_dto.dart';
 import 'package:face_locker/features/auth/data/models/register_form_dto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -42,7 +43,7 @@ class AuthRemoteDataSource {
     _debugLog('Response body: $responseBody');
   }
 
-  Future<void> login(LoginFormDto dto) async {
+  Future<LoginResponseDto> login(LoginFormDto dto) async {
     const method = 'POST';
     final uri = Uri.parse('$_baseUrl/api/v1/auths/login');
     final requestBody = dto.toJson();
@@ -60,7 +61,8 @@ class AuthRemoteDataSource {
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       _logHttpSuccess(method: method, uri: uri, statusCode: response.statusCode);
-      return;
+      final responseData = jsonDecode(response.body);
+      return LoginResponseDto.fromJson(responseData);
     }
 
     _logHttpError(

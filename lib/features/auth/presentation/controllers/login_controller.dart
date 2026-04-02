@@ -1,3 +1,4 @@
+import 'package:face_locker/core/services/user_service.dart';
 import 'package:face_locker/features/auth/data/datasources/auth_exception.dart';
 import 'package:face_locker/features/auth/data/models/login_form_dto.dart';
 import 'package:face_locker/features/auth/repositories/auth_repository.dart';
@@ -32,7 +33,8 @@ class LoginController extends ChangeNotifier {
     _debugLog('Login request started.');
 
     try {
-      await _authRepository.login(LoginFormDto(email: email, password: password));
+      final response = await _authRepository.login(LoginFormDto(email: email, password: password));
+      UserService().setUser(response.user);
       _debugLog('Login request succeeded.');
       return true;
     } on AuthException catch (error, stackTrace) {
