@@ -1,7 +1,7 @@
 import 'package:face_locker/features/auth/data/models/user_model.dart';
 
 class LoginResponseDto {
-  const LoginResponseDto({
+  LoginResponseDto({
     required this.accessToken,
     required this.refreshToken,
     required this.expiresIn,
@@ -9,7 +9,8 @@ class LoginResponseDto {
     required this.refreshExpiresIn,
     required this.scope,
     required this.user,
-  });
+    DateTime? issuedAt,
+  }) : issuedAt = issuedAt ?? DateTime.now();
 
   final String accessToken;
   final String refreshToken;
@@ -18,6 +19,7 @@ class LoginResponseDto {
   final int refreshExpiresIn;
   final String scope;
   final UserModel user;
+  final DateTime issuedAt;
 
   factory LoginResponseDto.fromJson(Map<String, dynamic> json) {
     final tokenData = json['token'] as Map<String, dynamic>?;

@@ -34,7 +34,7 @@ class LoginController extends ChangeNotifier {
 
     try {
       final response = await _authRepository.login(LoginFormDto(email: email, password: password));
-      UserService().setUser(response.user);
+      UserService().setSession(response);
       _debugLog('Login request succeeded.');
       return true;
     } on AuthException catch (error, stackTrace) {
