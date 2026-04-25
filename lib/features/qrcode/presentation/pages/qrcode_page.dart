@@ -1,4 +1,5 @@
 import 'package:face_locker/features/qrcode/presentation/controllers/qrcode_controller.dart';
+import 'package:face_locker/features/qrcode/presentation/pages/qr_scanner_page.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -29,6 +30,25 @@ class _QrcodePageState extends State<QrcodePage> {
       _controller.dispose();
     }
     super.dispose();
+  }
+
+  Future<void> _openScanner() async {
+    final result = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (context) => const QrScannerPage()),
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    if (result.trim() == 'generate-qr') {
+      await _controller.loadQrToken();
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Invalid QR content: $result')),
+    );
   }
 
   @override
@@ -161,6 +181,23 @@ class _QrcodePageState extends State<QrcodePage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF4A90E2),
                           foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        onPressed: _controller.isLoading ? null : _openScanner,
+                        icon: const Icon(Icons.qr_code_scanner),
+                        label: const Text('Scan QR to generate'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF4A90E2),
+                          side: const BorderSide(color: Color(0xFF4A90E2)),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),

@@ -50,6 +50,8 @@ class AuthRemoteDataSource {
     final sanitizedRequestBody = Map<String, dynamic>.from(requestBody)
       ..update('password', (_) => '***', ifAbsent: () => '***');
 
+    _debugLog('Calling API: $uri');
+
     final response = await _client.post(
       uri,
       headers: {
@@ -84,6 +86,8 @@ class AuthRemoteDataSource {
     final requestBody = dto.toJson();
     final sanitizedRequestBody = Map<String, dynamic>.from(requestBody)
       ..update('password', (_) => '***', ifAbsent: () => '***');
+
+    _debugLog('Calling API: $uri');
 
     final response = await _client.post(
       uri,
@@ -123,20 +127,22 @@ class AuthRemoteDataSource {
   }
 
   String get _defaultHost {
-    if (kIsWeb) {
-      return 'localhost';
-    }
-
-    try {
-      if (Platform.isAndroid) {
-        return '10.0.2.2';
-      }
-    } catch (_) {
-      // Platform checks may fail in some test environments.
-    }
-
+  if (kIsWeb) {
     return 'localhost';
   }
+
+  try {
+    if (Platform.isAndroid) {
+      return '10.0.2.2';
+    }
+
+    if (Platform.isIOS) {
+      return '192.168.1.2'; // 👈 IP máy Mac của bạn
+    }
+  } catch (_) {}
+
+  return 'localhost';
+}
 
   String _extractErrorMessage(http.Response response) {
     try {
