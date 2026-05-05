@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:face_locker/features/auth/data/datasources/auth_exception.dart';
 import 'package:face_locker/features/auth/data/models/login_form_dto.dart';
+import 'package:face_locker/features/auth/data/models/login_response_dto.dart';
 import 'package:face_locker/features/auth/data/models/register_form_dto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -42,12 +43,14 @@ class AuthRemoteDataSource {
     _debugLog('Response body: $responseBody');
   }
 
-  Future<void> login(LoginFormDto dto) async {
+  Future<LoginResponseDto> login(LoginFormDto dto) async {
     const method = 'POST';
     final uri = Uri.parse('$_baseUrl/api/v1/auths/login');
     final requestBody = dto.toJson();
     final sanitizedRequestBody = Map<String, dynamic>.from(requestBody)
       ..update('password', (_) => '***', ifAbsent: () => '***');
+
+    _debugLog('Calling API: $uri');
 
     final response = await _client.post(
       uri,
@@ -60,7 +63,8 @@ class AuthRemoteDataSource {
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       _logHttpSuccess(method: method, uri: uri, statusCode: response.statusCode);
-      return;
+      final responseData = jsonDecode(response.body);
+      return LoginResponseDto.fromJson(responseData);
     }
 
     _logHttpError(
@@ -82,6 +86,8 @@ class AuthRemoteDataSource {
     final requestBody = dto.toJson();
     final sanitizedRequestBody = Map<String, dynamic>.from(requestBody)
       ..update('password', (_) => '***', ifAbsent: () => '***');
+
+    _debugLog('Calling API: $uri');
 
     final response = await _client.post(
       uri,
@@ -121,20 +127,22 @@ class AuthRemoteDataSource {
   }
 
   String get _defaultHost {
-    if (kIsWeb) {
-      return 'localhost';
-    }
-
-    try {
-      if (Platform.isAndroid) {
-        return '10.0.2.2';
-      }
-    } catch (_) {
-      // Platform checks may fail in some test environments.
-    }
-
+  if (kIsWeb) {
     return 'localhost';
   }
+
+  try {
+    if (Platform.isAndroid) {
+      return '10.0.2.2';
+    }
+
+    if (Platform.isIOS) {
+      return '192.168.1.2'; // 👈 IP máy Mac của bạn
+    }
+  } catch (_) {}
+
+  return 'localhost';
+}
 
   String _extractErrorMessage(http.Response response) {
     try {
