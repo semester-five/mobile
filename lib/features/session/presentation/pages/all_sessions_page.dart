@@ -1,102 +1,117 @@
 import 'package:flutter/material.dart';
+import 'package:face_locker/features/session/presentation/models/session_item_view.dart';
 
 class AllSessionsPage extends StatelessWidget {
-	const AllSessionsPage({super.key});
+  const AllSessionsPage({super.key, required this.sessions});
 
-	@override
-	Widget build(BuildContext context) {
-		return ListView(
-			padding: EdgeInsets.zero,
-			children: const [
-				_SessionCard(
-					lockerCode: 'A05',
-					dateTime: 'Jan 23, 10:00 AM',
-					status: 'Active',
-				),
-				SizedBox(height: 12),
-				_SessionCard(
-					lockerCode: 'B11',
-					dateTime: 'Jan 21, 03:45 PM',
-					status: 'Completed',
-				),
-				SizedBox(height: 12),
-				_SessionCard(
-					lockerCode: 'C02',
-					dateTime: 'Jan 20, 09:10 AM',
-					status: 'Completed',
-				),
-			],
-		);
-	}
+  final List<SessionItemView> sessions;
+
+  @override
+  Widget build(BuildContext context) {
+    if (sessions.isEmpty) {
+      return const Center(
+        child: Text(
+          'No sessions found.',
+          style: TextStyle(color: Color(0xFF6B7280)),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.zero,
+      itemCount: sessions.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final session = sessions[index];
+        return _SessionCard(
+          lockerCode: session.lockerCode,
+          dateTime: _formatDateTime(session.checkInAt ?? session.createdAt),
+          status: session.status,
+        );
+      },
+    );
+  }
+
+  String _formatDateTime(DateTime? dateTime) {
+    if (dateTime == null) {
+      return '-';
+    }
+    final local = dateTime.toLocal();
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    return '$day/$month/${local.year} $hour:$minute';
+  }
 }
 
 class _SessionCard extends StatelessWidget {
-	const _SessionCard({
-		required this.lockerCode,
-		required this.dateTime,
-		required this.status,
-	});
+  const _SessionCard({
+    required this.lockerCode,
+    required this.dateTime,
+    required this.status,
+  });
 
-	final String lockerCode;
-	final String dateTime;
-	final String status;
+  final String lockerCode;
+  final String dateTime;
+  final String status;
 
-	bool get _isActive => status == 'Active';
+  bool get _isActive {
+    final value = status.toUpperCase();
+    return value.contains('ACTIVE') || value.contains('IN_USE');
+  }
 
-	@override
-	Widget build(BuildContext context) {
-		return Container(
-			padding: const EdgeInsets.all(16),
-			decoration: BoxDecoration(
-				color: Colors.white,
-				border: Border.all(color: const Color(0xFFE5E7EB)),
-				borderRadius: BorderRadius.circular(12),
-			),
-			child: Row(
-				mainAxisAlignment: MainAxisAlignment.spaceBetween,
-				children: [
-					Column(
-						crossAxisAlignment: CrossAxisAlignment.start,
-						children: [
-							Text(
-								lockerCode,
-								style: const TextStyle(
-									fontSize: 18,
-									fontWeight: FontWeight.w700,
-									color: Color(0xFF1F2937),
-								),
-							),
-							const SizedBox(height: 8),
-							Text(
-								dateTime,
-								style: const TextStyle(
-									fontSize: 12,
-									color: Color(0xFF6B7280),
-								),
-							),
-						],
-					),
-					Container(
-						padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-						decoration: BoxDecoration(
-							color: _isActive
-									? const Color(0xFFDBEAFE)
-									: const Color(0xFFECFDF3),
-							borderRadius: BorderRadius.circular(12),
-						),
-						child: Text(
-							status,
-							style: TextStyle(
-								fontSize: 12,
-								fontWeight: FontWeight.w600,
-								color: _isActive
-										? const Color(0xFF1E40AF)
-										: const Color(0xFF166534),
-							),
-						),
-					),
-				],
-			),
-		);
-	}
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                lockerCode,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1F2937),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                dateTime,
+                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+              ),
+            ],
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: _isActive
+                  ? const Color(0xFFDBEAFE)
+                  : const Color(0xFFECFDF3),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              status,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: _isActive
+                    ? const Color(0xFF1E40AF)
+                    : const Color(0xFF166534),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

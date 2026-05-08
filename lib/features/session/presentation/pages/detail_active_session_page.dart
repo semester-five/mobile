@@ -1,7 +1,10 @@
+import 'package:face_locker/features/session/presentation/models/session_item_view.dart';
 import 'package:flutter/material.dart';
 
 class DetailActiveSessionPage extends StatelessWidget {
-  const DetailActiveSessionPage({super.key});
+  const DetailActiveSessionPage({super.key, required this.session});
+
+  final SessionItemView session;
 
   @override
   Widget build(BuildContext context) {
@@ -40,9 +43,9 @@ class DetailActiveSessionPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'A05',
-                    style: TextStyle(
+                  Text(
+                    session.lockerCode.isEmpty ? '-' : session.lockerCode,
+                    style: const TextStyle(
                       color: Color(0xFF1E40AF),
                       fontSize: 72,
                       fontWeight: FontWeight.w800,
@@ -50,7 +53,9 @@ class DetailActiveSessionPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 32),
                   Text(
-                    'Floor 1 - Zone B',
+                    session.lockerLocation.isEmpty
+                        ? '-'
+                        : session.lockerLocation,
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 16,
@@ -61,9 +66,9 @@ class DetailActiveSessionPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
-            const Text(
-              '00:45:23',
-              style: TextStyle(
+            Text(
+              _formatElapsed(session.checkInAt),
+              style: const TextStyle(
                 color: Color(0xFF374151),
                 fontSize: 32,
                 fontWeight: FontWeight.w700,
@@ -73,5 +78,16 @@ class DetailActiveSessionPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatElapsed(DateTime? checkInAt) {
+    if (checkInAt == null) {
+      return '--:--:--';
+    }
+    final diff = DateTime.now().difference(checkInAt);
+    final hours = diff.inHours.toString().padLeft(2, '0');
+    final minutes = (diff.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (diff.inSeconds % 60).toString().padLeft(2, '0');
+    return '$hours:$minutes:$seconds';
   }
 }

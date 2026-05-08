@@ -39,32 +39,16 @@ class _QrScannerPageState extends State<QrScannerPage> {
 
     _isProcessing = true;
 
-    final isValid = rawValue.trim() == 'generate-qr';
-
-    _showResult(
-      isValid
-          ? 'Scan successful: valid QR detected'
-          : 'Scan failed: invalid QR content: ${rawValue.trim()}',
-      isValid ? Colors.greenAccent : Colors.redAccent,
-    );
-
-    await _scannerController.stop();
-
-    if (!isValid) {
-      await Future<void>.delayed(const Duration(milliseconds: 1200));
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _statusMessage = null;
-        _statusColor = Colors.white;
-        _isProcessing = false;
-      });
-
-      await _scannerController.start();
+    final trimmed = rawValue.trim();
+    if (trimmed.isEmpty) {
+      _showResult('Scan failed: empty QR content', Colors.redAccent);
+      _isProcessing = false;
       return;
     }
+
+    _showResult('Scan successful', Colors.greenAccent);
+
+    await _scannerController.stop();
 
     if (!mounted) {
       return;
@@ -75,7 +59,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
       return;
     }
 
-    Navigator.of(context).pop<String>(rawValue);
+    Navigator.of(context).pop<String>(trimmed);
   }
 
   Future<void> _handleBarcodeCapture(BarcodeCapture capture) async {
@@ -142,32 +126,41 @@ class _QrScannerPageState extends State<QrScannerPage> {
                   ),
                   Align(
                     alignment: Alignment.topLeft,
-                    child: Container(width: 32, height: 32, decoration: const BoxDecoration(border: Border(top: BorderSide(color: Colors.greenAccent, width: 4), left: BorderSide(color: Colors.greenAccent, width: 4)))),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          top: BorderSide(color: Colors.greenAccent, width: 4),
+                          left: BorderSide(color: Colors.greenAccent, width: 4),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-              Align(
-                alignment: Alignment.topCenter,
-                child: Container(
-                  margin: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    _statusMessage ?? 'Point your camera at the QR code',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: _statusMessage == null ? Colors.white : _statusColor,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+          Align(
+            alignment: Alignment.topCenter,
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                _statusMessage ?? 'Point your camera at the QR code',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _statusMessage == null ? Colors.white : _statusColor,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
+            ),
+          ),
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -190,7 +183,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
                     controller: _manualInputController,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Simulator fallback: generate-qr',
+                      hintText: 'Simulator fallback: paste QR token',
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       filled: true,
                       fillColor: Colors.white10,

@@ -1,3 +1,4 @@
+import 'package:face_locker/core/services/session_service.dart';
 import 'package:face_locker/features/qrcode/presentation/controllers/qrcode_controller.dart';
 import 'package:face_locker/features/qrcode/presentation/pages/qr_scanner_page.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,8 @@ class QrcodePage extends StatefulWidget {
 class _QrcodePageState extends State<QrcodePage> {
   late final QrcodeController _controller;
   late final bool _ownsController;
+  final SessionService _sessionService = SessionService();
+  bool _isProcessingScan = false;
 
   @override
   void initState() {
@@ -37,18 +40,56 @@ class _QrcodePageState extends State<QrcodePage> {
       MaterialPageRoute(builder: (context) => const QrScannerPage()),
     );
 
-    if (!mounted || result == null) {
-      return;
-    }
+    if (!mounted || result == null) return;
 
-    if (result.trim() == 'generate-qr') {
+    final token = result.trim();
+    if (token == 'generate-qr') {
       await _controller.loadQrToken();
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Invalid QR content: $result')),
-    );
+    if (_isProcessingScan) return;
+
+    setState(() => _isProcessingScan = true);
+
+    try {
+      // ── TEST MODE: mock response cho token "abcdef" ──────────────
+      if (token == 'cico-locker') {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('[TEST] CICO success for locker TEST-001'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        return;
+      }
+      // ─────────────────────────────────────────────────────────────
+
+      final response = await _sessionService.cicoByQRCode(token);
+      final lockerCode =
+          response['lockerCode'] ??
+          response['locker']?['code'] ??
+          response['locker_code'] ??
+          response['lockerId'];
+      final status =
+          response['status'] ?? response['sessionStatus'] ?? response['state'];
+      final message = lockerCode != null && lockerCode.toString().isNotEmpty
+          ? 'CICO success for locker $lockerCode'
+          : 'CICO success${status != null ? ' ($status)' : ''}';
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('CICO failed: $error')));
+    } finally {
+      if (mounted) setState(() => _isProcessingScan = false);
+    }
   }
 
   @override
@@ -102,31 +143,31 @@ class _QrcodePageState extends State<QrcodePage> {
                         child: _controller.isLoading
                             ? const Center(child: CircularProgressIndicator())
                             : qrToken == null
-                                ? Center(
-                                    child: Icon(
-                                      Icons.qr_code_2,
-                                      size: 120,
-                                      color: Colors.grey[400],
-                                    ),
-                                  )
-                                : Container(
-                                    color: Colors.white,
-                                    padding: const EdgeInsets.all(12),
-                                    child: QrImageView(
-                                      data: qrToken.token,
-                                      version: QrVersions.auto,
-                                      size: 226,
-                                      backgroundColor: Colors.white,
-                                      eyeStyle: const QrEyeStyle(
-                                        eyeShape: QrEyeShape.square,
-                                        color: Colors.black,
-                                      ),
-                                      dataModuleStyle: const QrDataModuleStyle(
-                                        dataModuleShape: QrDataModuleShape.square,
-                                        color: Colors.black,
-                                      ),
-                                    ),
+                            ? Center(
+                                child: Icon(
+                                  Icons.qr_code_2,
+                                  size: 120,
+                                  color: Colors.grey[400],
+                                ),
+                              )
+                            : Container(
+                                color: Colors.white,
+                                padding: const EdgeInsets.all(12),
+                                child: QrImageView(
+                                  data: qrToken.token,
+                                  version: QrVersions.auto,
+                                  size: 226,
+                                  backgroundColor: Colors.white,
+                                  eyeStyle: const QrEyeStyle(
+                                    eyeShape: QrEyeShape.square,
+                                    color: Colors.black,
                                   ),
+                                  dataModuleStyle: const QrDataModuleStyle(
+                                    dataModuleShape: QrDataModuleShape.square,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -145,18 +186,12 @@ class _QrcodePageState extends State<QrcodePage> {
                     if (qrToken != null) ...[
                       Text(
                         'Expires at: ${_formatDateTime(qrToken.expiresAt)}',
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: Colors.grey[700], fontSize: 13),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Auto refresh in ${_formatRemainingSeconds(remainingSeconds)}',
-                        style: TextStyle(
-                          color: Colors.grey[700],
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: Colors.grey[700], fontSize: 13),
                       ),
                       const SizedBox(height: 8),
                     ],
@@ -165,17 +200,16 @@ class _QrcodePageState extends State<QrcodePage> {
                           ? 'Tap refresh to generate your check-in QR code.'
                           : 'Show this code to the locker camera',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     ),
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton.icon(
-                        onPressed: _controller.isLoading ? null : _controller.loadQrToken,
+                        onPressed: _controller.isLoading
+                            ? null
+                            : _controller.loadQrToken,
                         icon: const Icon(Icons.refresh),
                         label: const Text('Generate new QR'),
                         style: ElevatedButton.styleFrom(
@@ -192,9 +226,11 @@ class _QrcodePageState extends State<QrcodePage> {
                       width: double.infinity,
                       height: 48,
                       child: OutlinedButton.icon(
-                        onPressed: _controller.isLoading ? null : _openScanner,
+                        onPressed: _controller.isLoading || _isProcessingScan
+                            ? null
+                            : _openScanner,
                         icon: const Icon(Icons.qr_code_scanner),
-                        label: const Text('Scan QR to generate'),
+                        label: const Text('Scan QR to check-in/out'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFF4A90E2),
                           side: const BorderSide(color: Color(0xFF4A90E2)),
