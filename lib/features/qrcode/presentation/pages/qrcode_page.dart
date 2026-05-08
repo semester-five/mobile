@@ -3,6 +3,7 @@ import 'package:face_locker/features/qrcode/presentation/controllers/qrcode_cont
 import 'package:face_locker/features/qrcode/presentation/pages/qr_scanner_page.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:http/http.dart' as http;
 
 class QrcodePage extends StatefulWidget {
   const QrcodePage({super.key, this.controller});
@@ -53,18 +54,21 @@ class _QrcodePageState extends State<QrcodePage> {
     setState(() => _isProcessingScan = true);
 
     try {
-      // ── TEST MODE: mock response cho token "abcdef" ──────────────
       if (token == 'cico-locker') {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('[TEST] CICO success for locker TEST-001'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        return;
+        try {
+          // Gửi request http để mở tủ thông qua ESP32
+          final response = await http
+              .get(Uri.parse('http://172.21.168.142/open1'))
+              .timeout(const Duration(seconds: 5));
+          if (response.statusCode == 200) {
+            debugPrint('Mở tủ thành công: ${response.body}');
+          } else {
+            debugPrint('Lỗi khi mở tủ: ${response.statusCode}');
+          }
+        } catch (e) {
+          debugPrint('Lỗi kết nối ESP32: $e');
+        }
       }
-      // ─────────────────────────────────────────────────────────────
 
       final response = await _sessionService.cicoByQRCode(token);
       final lockerCode =
