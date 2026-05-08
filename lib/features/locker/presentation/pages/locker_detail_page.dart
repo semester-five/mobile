@@ -1,7 +1,55 @@
+import 'package:face_locker/core/services/locker_service.dart';
+import 'package:face_locker/features/locker/presentation/models/locker_item_view.dart';
+import 'package:face_locker/features/locker/presentation/pages/locker_action_page.dart';
 import 'package:flutter/material.dart';
 
-class LockerDetailPage extends StatelessWidget {
-  const LockerDetailPage({super.key});
+class LockerDetailPage extends StatefulWidget {
+  const LockerDetailPage({super.key, required this.lockerId});
+
+  final String lockerId;
+
+  @override
+  State<LockerDetailPage> createState() => _LockerDetailPageState();
+}
+
+class _LockerDetailPageState extends State<LockerDetailPage> {
+  final LockerService _lockerService = LockerService();
+
+  bool _isLoading = false;
+  String? _errorMessage;
+  LockerItemView? _locker;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLocker();
+  }
+
+  Future<void> _loadLocker() async {
+    if (_isLoading) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await _lockerService.getLockerById(widget.lockerId);
+      final data = response['data'];
+      final lockerJson = data is Map<String, dynamic> ? data : response;
+      _locker = LockerItemView.fromJson(lockerJson);
+    } catch (error) {
+      _errorMessage = 'Failed to load locker details.';
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,91 +74,45 @@ class LockerDetailPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 20),
-
-            Container(
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF2F2),
-                borderRadius: BorderRadius.circular(24),
+            if (_isLoading)
+              const Center(child: CircularProgressIndicator())
+            else if (_errorMessage != null)
+              _ErrorState(message: _errorMessage!, onRetry: _loadLocker)
+            else if (_locker != null)
+              _LockerHeader(locker: _locker!)
+            else
+              const Center(
+                child: Text(
+                  'Locker not found.',
+                  style: TextStyle(color: Color(0xFF6B7280)),
+                ),
               ),
-              child: Column(
-                children: [
-                  const Text(
-                    'A02',
-                    style: TextStyle(
-                      fontSize: 64,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.red,
-                    ),
-                  ),
-                  const Text(
-                    'In Use',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Floor 1 • Size M • Door: Closed',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-
             const SizedBox(height: 32),
-
-            const Text(
-              'Current Session',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Column(
-                children: [
-                  _InfoRow(label: 'User:', value: 'Nguyen Van A'),
-                  SizedBox(height: 8),
-                  _InfoRow(label: 'Check-in:', value: '10:30 AM (2 hours ago)'),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
             const Text(
               'Hardware Info',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const Text(
-              'ESP32: esp32_01 • Relay: 17',
+              'ESP32: -- • Relay: --',
               style: TextStyle(color: Colors.grey),
             ),
-
             const SizedBox(height: 40),
-
             ElevatedButton(
-              onPressed: () {},
+              onPressed: _locker == null
+                  ? null
+                  : () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              LockerActionPage(lockerId: widget.lockerId),
+                        ),
+                      );
+                    },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
+                backgroundColor: const Color(0xFF3B82F6),
                 minimumSize: const Size(double.infinity, 50),
               ),
-              child: const Text('Set Maintenance'),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                minimumSize: const Size(double.infinity, 50),
-              ),
-              child: const Text('Force Open Locker'),
+              child: const Text('Open Actions'),
             ),
           ],
         ),
@@ -119,26 +121,103 @@ class LockerDetailPage extends StatelessWidget {
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  const _InfoRow({required this.label, required this.value});
+class _LockerHeader extends StatelessWidget {
+  const _LockerHeader({required this.locker});
+
+  final LockerItemView locker;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 80,
-          child: Text(label, style: const TextStyle(color: Colors.grey)),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+    final statusColor = _statusColor(locker.status);
+    final backgroundColor = statusColor.withValues(alpha: 0.1);
+
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          Text(
+            locker.code.isEmpty ? '-' : locker.code,
+            style: TextStyle(
+              fontSize: 64,
+              fontWeight: FontWeight.w800,
+              color: statusColor,
+            ),
           ),
+          Text(
+            locker.status.isEmpty ? 'Unknown' : locker.status,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: statusColor,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(_buildMeta(locker), style: const TextStyle(color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+
+  String _buildMeta(LockerItemView locker) {
+    final location = locker.location.isEmpty ? '-' : locker.location;
+    final size = locker.size.isEmpty ? '-' : locker.size;
+    final doorState = locker.doorState.isEmpty ? '-' : locker.doorState;
+    return '$location • Size $size • Door: $doorState';
+  }
+
+  Color _statusColor(String status) {
+    final value = status.toUpperCase();
+    if (value.contains('AVAILABLE') || value.contains('FREE')) {
+      return Colors.green;
+    }
+    if (value.contains('IN_USE') || value.contains('ACTIVE')) {
+      return Colors.red;
+    }
+    if (value.contains('MAINTENANCE')) {
+      return Colors.orange;
+    }
+    return Colors.blueGrey;
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFFEF4444),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: 160,
+              child: OutlinedButton(
+                onPressed: onRetry,
+                child: const Text('Retry'),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

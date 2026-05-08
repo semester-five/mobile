@@ -1,7 +1,10 @@
 import 'dart:convert';
 
+import 'dart:io';
+
 import 'package:face_locker/features/qrcode/data/models/qr_token_response_dto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class QrTokenRemoteDataSource {
@@ -18,15 +21,14 @@ class QrTokenRemoteDataSource {
     }
   }
 
-  Future<QrTokenResponseDto> generateQrToken({required String accessToken}) async {
+  Future<QrTokenResponseDto> generateQrToken({
+    required String accessToken,
+  }) async {
     final uri = Uri.parse('$_baseUrl/api/v1/qr-tokens/generate');
 
     final response = await _client.post(
       uri,
-      headers: {
-        'Accept': '*/*',
-        'Authorization': 'Bearer $accessToken',
-      },
+      headers: {'Accept': '*/*', 'Authorization': 'Bearer $accessToken'},
     );
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -45,6 +47,27 @@ class QrTokenRemoteDataSource {
     if (override != null && override.isNotEmpty) {
       return override;
     }
-    return 'http://localhost:3000';
+
+    final host = dotenv.env['API_HOST'] ?? _defaultHost;
+    final port = dotenv.env['PORT'] ?? '3000';
+    return 'http://$host:$port';
+  }
+
+  String get _defaultHost {
+    if (kIsWeb) {
+      return 'localhost';
+    }
+
+    try {
+      if (Platform.isAndroid) {
+        return '10.0.2.2';
+      }
+
+      if (Platform.isIOS) {
+        return '192.168.1.2';
+      }
+    } catch (_) {}
+
+    return 'localhost';
   }
 }

@@ -4,7 +4,6 @@ class UserModel {
     required this.email,
     required this.firstName,
     required this.lastName,
-    required this.fullName,
     required this.role,
     this.avatarId,
     this.picture,
@@ -17,7 +16,6 @@ class UserModel {
   final String email;
   final String firstName;
   final String lastName;
-  final String fullName;
   final String role;
   final String? avatarId;
   final String? picture;
@@ -29,10 +27,9 @@ class UserModel {
     return UserModel(
       id: json['id'] as String,
       email: json['email'] as String,
-      firstName: json['firstName'] as String,
-      lastName: json['lastName'] as String,
-      fullName: json['fullName'] as String,
-      role: json['role'] as String,
+      firstName: json['firstName'] as String? ?? '',
+      lastName: json['lastName'] as String? ?? '',
+      role: json['role'] as String? ?? 'USER',
       avatarId: json['avatarId'] as String?,
       picture: json['picture'] as String?,
       gender: json['gender'] as String?,
@@ -44,13 +41,17 @@ class UserModel {
   bool get isAdmin => role.toUpperCase() == 'ADMIN';
   bool get isUser => role.toUpperCase() == 'USER';
 
+  // ✅ Getter thay vì lưu trong JSON
+  String get fullName {
+    return '$firstName $lastName'.trim();
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'email': email,
       'firstName': firstName,
       'lastName': lastName,
-      'fullName': fullName,
       'role': role,
       'avatarId': avatarId,
       'picture': picture,
