@@ -7,6 +7,10 @@ class LockerItemView {
     required this.size,
     required this.doorState,
     this.espId = '',
+    this.openUrl = '',
+    this.closeUrl = '',
+    this.createdAt = '',
+    this.updatedAt = '',
   });
 
   final String id;
@@ -16,6 +20,10 @@ class LockerItemView {
   final String size;
   final String doorState;
   final String espId;
+  final String openUrl;
+  final String closeUrl;
+  final String createdAt;
+  final String updatedAt;
 
   factory LockerItemView.fromJson(Map<String, dynamic> json) {
     return LockerItemView(
@@ -26,6 +34,10 @@ class LockerItemView {
       size: _readString(json['size'] ?? json['lockerSize']),
       doorState: _readString(json['doorState'] ?? json['door_state']),
       espId: _readString(json['espId'] ?? json['esp32Id']),
+      openUrl: _readString(json['openUrl'] ?? json['open_url']),
+      closeUrl: _readString(json['closeUrl'] ?? json['close_url']),
+      createdAt: _readString(json['createdAt'] ?? json['created_at']),
+      updatedAt: _readString(json['updatedAt'] ?? json['updated_at']),
     );
   }
 

@@ -98,7 +98,7 @@ class _LockerDetailPageState extends State<LockerDetailPage> {
             else if (_errorMessage != null)
               _ErrorState(message: _errorMessage!, onRetry: _loadLocker)
             else if (_locker != null)
-              _LockerHeader(locker: _locker!)
+                _LockerHeader(locker: _locker!)
             else
               const Center(
                 child: Text(
@@ -107,15 +107,45 @@ class _LockerDetailPageState extends State<LockerDetailPage> {
                 ),
               ),
             const SizedBox(height: 32),
-            const Text(
-              'Hardware Info',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const Text(
-              'ESP32: -- • Relay: --',
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 40),
+              if (_locker != null) ...[
+                const Text(
+                  'Locker Info',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                _InfoGrid(locker: _locker!),
+                const SizedBox(height: 24),
+                const Text(
+                  'Hardware & URLs',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                _InfoCard(
+                  label: 'ESP32 ID',
+                  value: _locker!.espId.isEmpty ? '-' : _locker!.espId,
+                ),
+                const SizedBox(height: 12),
+                _InfoCard(
+                  label: 'Open URL',
+                  value: _locker!.openUrl.isEmpty ? '-' : _locker!.openUrl,
+                ),
+                const SizedBox(height: 12),
+                _InfoCard(
+                  label: 'Close URL',
+                  value: _locker!.closeUrl.isEmpty ? '-' : _locker!.closeUrl,
+                ),
+                const SizedBox(height: 12),
+                _InfoCard(
+                  label: 'Created At',
+                  value: _formatDate(_locker!.createdAt),
+                ),
+                const SizedBox(height: 12),
+                _InfoCard(
+                  label: 'Updated At',
+                  value: _formatDate(_locker!.updatedAt),
+                ),
+                const SizedBox(height: 40),
+              ],
             ElevatedButton(
               onPressed: _locker == null
                   ? null
@@ -201,6 +231,97 @@ class _LockerHeader extends StatelessWidget {
     }
     return Colors.blueGrey;
   }
+}
+
+class _InfoGrid extends StatelessWidget {
+  const _InfoGrid({required this.locker});
+
+  final LockerItemView locker;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _InfoCard(label: 'Code', value: locker.code.isEmpty ? '-' : locker.code),
+        const SizedBox(height: 12),
+        _InfoCard(
+          label: 'Location',
+          value: locker.location.isEmpty ? '-' : locker.location,
+        ),
+        const SizedBox(height: 12),
+        _InfoCard(label: 'Size', value: locker.size.isEmpty ? '-' : locker.size),
+        const SizedBox(height: 12),
+        _InfoCard(
+          label: 'Status',
+          value: locker.status.isEmpty ? '-' : locker.status,
+        ),
+        const SizedBox(height: 12),
+        _InfoCard(
+          label: 'Door State',
+          value: locker.doorState.isEmpty ? '-' : locker.doorState,
+        ),
+        const SizedBox(height: 12),
+        _InfoCard(label: 'Locker ID', value: locker.id),
+      ],
+    );
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  const _InfoCard({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF6B7280),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Color(0xFF111827),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _formatDate(String value) {
+  if (value.isEmpty) {
+    return '-';
+  }
+
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) {
+    return value;
+  }
+
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${two(parsed.day)}/${two(parsed.month)}/${parsed.year} ${two(parsed.hour)}:${two(parsed.minute)}';
 }
 
 class _ErrorState extends StatelessWidget {
