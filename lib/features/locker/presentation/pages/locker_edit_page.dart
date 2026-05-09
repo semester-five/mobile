@@ -18,7 +18,6 @@ class _LockerEditPageState extends State<LockerEditPage> {
   late TextEditingController _codeController;
   late TextEditingController _locationController;
   late TextEditingController _sizeController;
-  late TextEditingController _esp32IdController;
 
   bool _isLoading = false;
 
@@ -32,9 +31,6 @@ class _LockerEditPageState extends State<LockerEditPage> {
       text: widget.locker?.location ?? '',
     );
     _sizeController = TextEditingController(text: widget.locker?.size ?? '');
-    _esp32IdController = TextEditingController(
-      text: widget.locker?.espId ?? '',
-    );
   }
 
   @override
@@ -42,7 +38,6 @@ class _LockerEditPageState extends State<LockerEditPage> {
     _codeController.dispose();
     _locationController.dispose();
     _sizeController.dispose();
-    _esp32IdController.dispose();
     super.dispose();
   }
 
@@ -56,7 +51,12 @@ class _LockerEditPageState extends State<LockerEditPage> {
         'code': _codeController.text.trim(),
         'location': _locationController.text.trim(),
         'size': _sizeController.text.trim(),
-        'espId': _esp32IdController.text.trim(),
+        'openUrl':
+            'https://api.example.com/lockers/${_codeController.text.trim()}/open',
+        'closeUrl':
+            'https://api.example.com/lockers/${_codeController.text.trim()}/close',
+        'status': widget.locker?.status ?? 'AVAILABLE',
+        'doorState': widget.locker?.doorState ?? 'CLOSED',
       };
 
       if (_isEditing) {
@@ -178,12 +178,6 @@ class _LockerEditPageState extends State<LockerEditPage> {
                   ),
                   const SizedBox(height: 16),
                   _buildTextField('Size', _sizeController, 'e.g., Medium'),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    'ESP32 ID',
-                    _esp32IdController,
-                    'e.g., esp32_01',
-                  ),
                   const SizedBox(height: 32),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _handleSave,
