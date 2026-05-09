@@ -36,11 +36,22 @@ class _LockerListPageState extends State<LockerListPage> {
     });
 
     try {
+      final filters = <String, dynamic>{};
+      if (_selectedTab == LockerFilterTab.available) {
+        filters['status'] = 'AVAILABLE';
+      }
+
       final response = await _lockerService.getAllLockers(
         pageNumber: 1,
         pageSize: 50,
+        filters: filters.isNotEmpty ? filters : null,
       );
-      final data = response['data'];
+      final data =
+          response['content'] ??
+          response['data'] ??
+          response['items'] ??
+          response['items'] ??
+          response;
 
       if (data is List) {
         _lockers = data
@@ -62,14 +73,7 @@ class _LockerListPageState extends State<LockerListPage> {
   }
 
   List<LockerItemView> get _filteredLockers {
-    if (_selectedTab == LockerFilterTab.all) {
-      return _lockers;
-    }
-
-    return _lockers.where((locker) {
-      final status = locker.status.toUpperCase();
-      return status.contains('AVAILABLE') || status.contains('FREE');
-    }).toList();
+    return _lockers;
   }
 
   void _onTabSelected(LockerFilterTab tab) {
@@ -79,6 +83,7 @@ class _LockerListPageState extends State<LockerListPage> {
     setState(() {
       _selectedTab = tab;
     });
+    _loadLockers();
   }
 
   @override
