@@ -1,6 +1,7 @@
 import 'package:face_locker/core/services/locker_service.dart';
 import 'package:face_locker/features/locker/presentation/models/locker_item_view.dart';
 import 'package:face_locker/features/locker/presentation/pages/locker_action_page.dart';
+import 'package:face_locker/features/locker/presentation/pages/locker_edit_page.dart';
 import 'package:flutter/material.dart';
 
 class LockerDetailPage extends StatefulWidget {
@@ -67,6 +68,24 @@ class _LockerDetailPageState extends State<LockerDetailPage> {
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.blue),
+            onPressed: _locker == null
+                ? null
+                : () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => LockerEditPage(locker: _locker),
+                      ),
+                    );
+                    if (result == true) {
+                      _loadLocker();
+                    }
+                  },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24),

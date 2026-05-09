@@ -1,6 +1,7 @@
 import 'package:face_locker/core/services/locker_service.dart';
 import 'package:face_locker/features/locker/presentation/models/locker_item_view.dart';
 import 'package:face_locker/features/locker/presentation/pages/locker_detail_page.dart';
+import 'package:face_locker/features/locker/presentation/pages/locker_edit_page.dart';
 import 'package:flutter/material.dart';
 
 class LockerListPage extends StatefulWidget {
@@ -98,6 +99,19 @@ class _LockerListPageState extends State<LockerListPage> {
             onPressed: _isLoading ? null : _loadLockers,
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const LockerEditPage()),
+          );
+          if (result == true) {
+            _loadLockers();
+          }
+        },
+        backgroundColor: const Color(0xFF4A90E2),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
