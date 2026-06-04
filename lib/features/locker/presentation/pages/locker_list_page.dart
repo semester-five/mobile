@@ -145,7 +145,9 @@ class _LockerListPageState extends State<LockerListPage> {
 
     for (final candidate in candidates) {
       if (kDebugMode) {
-        debugPrint('Trying candidate: $candidate (type: ${candidate.runtimeType})');
+        debugPrint(
+          'Trying candidate: $candidate (type: ${candidate.runtimeType})',
+        );
       }
       final items = _extractList(candidate);
       if (items.isNotEmpty) {
@@ -164,7 +166,9 @@ class _LockerListPageState extends State<LockerListPage> {
 
   List<Map<String, dynamic>> _extractList(dynamic value) {
     if (value is List) {
-      final result = value.whereType<Map<String, dynamic>>().toList(growable: false);
+      final result = value.whereType<Map<String, dynamic>>().toList(
+        growable: false,
+      );
       if (kDebugMode) {
         debugPrint('_extractList: Found ${result.length} maps in list');
       }
@@ -172,7 +176,11 @@ class _LockerListPageState extends State<LockerListPage> {
     }
 
     if (value is Map<String, dynamic>) {
-      final nested = value['content'] ?? value['data'] ?? value['items'] ?? value['lockers'];
+      final nested =
+          value['content'] ??
+          value['data'] ??
+          value['items'] ??
+          value['lockers'];
       if (nested != null && nested != value) {
         if (kDebugMode) {
           debugPrint('_extractList: Found nested data, recursing...');
@@ -381,8 +389,8 @@ class _LockerListPageState extends State<LockerListPage> {
     final crossAxisCount = screenWidth >= 900
         ? 4
         : screenWidth >= 600
-            ? 3
-            : 2;
+        ? 3
+        : 2;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -430,8 +438,8 @@ class _LockerListPageState extends State<LockerListPage> {
                   child: Text(
                     'Bộ lọc và danh sách',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 if (_hasActiveFilters)
@@ -454,11 +462,15 @@ class _LockerListPageState extends State<LockerListPage> {
               children: [
                 _FilterSummaryChip(
                   label: 'Status',
-                  value: _statusFilter == _allValue ? 'All' : _enumLabel(_statusFilter),
+                  value: _statusFilter == _allValue
+                      ? 'All'
+                      : _enumLabel(_statusFilter),
                 ),
                 _FilterSummaryChip(
                   label: 'Size',
-                  value: _sizeFilter == _allValue ? 'All' : _enumLabel(_sizeFilter),
+                  value: _sizeFilter == _allValue
+                      ? 'All'
+                      : _enumLabel(_sizeFilter),
                 ),
                 _FilterSummaryChip(
                   label: 'Location',
@@ -503,7 +515,7 @@ class _LockerListPageState extends State<LockerListPage> {
                   crossAxisCount: crossAxisCount,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
-                  childAspectRatio: 0.92,
+                  childAspectRatio: 0.88,
                 ),
                 itemCount: _lockers.length,
                 itemBuilder: (context, index) {
@@ -513,7 +525,8 @@ class _LockerListPageState extends State<LockerListPage> {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => LockerDetailPage(lockerId: locker.id),
+                          builder: (context) =>
+                              LockerDetailPage(lockerId: locker.id),
                         ),
                       );
                     },
@@ -621,12 +634,16 @@ class _LockerCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(
-                    locker.code.isEmpty ? '-' : locker.code,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      locker.code.isEmpty ? '-' : locker.code,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
@@ -698,8 +715,8 @@ class _MiniBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 24,
-      height: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
       decoration: BoxDecoration(
         color: const Color(0xFFE5E7EB),
         borderRadius: BorderRadius.circular(12),
@@ -730,7 +747,9 @@ class _InlineErrorBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFFFF7ED),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.3)),
+        border: Border.all(
+          color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         children: [
