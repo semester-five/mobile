@@ -1,4 +1,5 @@
 import 'package:face_locker/core/services/session_service.dart';
+import 'package:face_locker/core/widgets/app_toast.dart';
 import 'package:face_locker/features/session/presentation/models/session_item_view.dart';
 import 'package:flutter/material.dart';
 
@@ -63,13 +64,24 @@ class _DetailActiveSessionPageState extends State<DetailActiveSessionPage> {
       },
     );
 
-    if (confirm != true) return;
+    if (!mounted) {
+      reasonController.dispose();
+      return;
+    }
+
+    if (confirm != true) {
+      reasonController.dispose();
+      return;
+    }
 
     final reason = reasonController.text.trim();
     if (reason.isEmpty) {
-      ScaffoldMessenger.of(
+      reasonController.dispose();
+      AppToast.warning(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Reason cannot be empty!')));
+        title: 'Reason required',
+        message: 'Please enter a reason before continuing.',
+      );
       return;
     }
 
@@ -80,21 +92,19 @@ class _DetailActiveSessionPageState extends State<DetailActiveSessionPage> {
     try {
       await _sessionService.forceCheckOut(widget.session.id, reason);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Force checkout successful'),
-            backgroundColor: Colors.green,
-          ),
+        AppToast.success(
+          context,
+          title: 'Checked out',
+          message: 'The active session was closed.',
         );
         Navigator.of(context).pop(true); // Return true to refresh parent
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
+        AppToast.error(context, title: 'Checkout failed', message: '$e');
       }
     } finally {
+      reasonController.dispose();
       if (mounted) {
         setState(() {
           _isLoading = false;
