@@ -4,7 +4,17 @@ import 'api_client.dart';
 class SessionService {
   final ApiClient _apiClient = ApiClient();
 
-  /// Check-in hoặc Check-out bằng FaceID
+  Future<Map<String, dynamic>> generateQRCodeToken() async {
+    final response = await _apiClient.post('/qr-tokens/generate');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Generate QR token failed: ${response.body}');
+    }
+  }
+
+  /// Check in or check out with Face ID.
   Future<Map<String, dynamic>> cicoByFace({
     required List<double> faceVector,
     int? age,
@@ -26,7 +36,7 @@ class SessionService {
     }
   }
 
-  /// Check-in hoặc Check-out bằng mã QR
+  /// Check in or check out with a QR code.
   Future<Map<String, dynamic>> cicoByQRCode(String qrToken) async {
     final response = await _apiClient.post(
       '/sessions/cico/qr',
@@ -40,7 +50,7 @@ class SessionService {
     }
   }
 
-  /// Force check-out bởi admin
+  /// Force check-out by an admin.
   Future<Map<String, dynamic>> forceCheckOut(
     String sessionId,
     String reason,
@@ -57,7 +67,7 @@ class SessionService {
     }
   }
 
-  /// Lấy danh sách các lần sử dụng tử (sessions) của user hiện tại
+  /// Get the current user's locker usage sessions.
   Future<Map<String, dynamic>> getMySessions({
     int page = 1,
     int limit = 20,
@@ -77,7 +87,7 @@ class SessionService {
     }
   }
 
-  /// Lấy tất cả các sessions đang active (Chỉ cho Admin)
+  /// Get all active sessions. Admin only.
   Future<Map<String, dynamic>> getActiveSessions({
     int page = 1,
     int limit = 20,

@@ -4,7 +4,7 @@ import 'api_client.dart';
 class MediaService {
   final ApiClient _apiClient = ApiClient();
 
-  /// Upload file thông tin
+  /// Create media metadata.
   Future<Map<String, dynamic>> createMedia(Map<String, dynamic> data) async {
     final response = await _apiClient.post('/media', body: data);
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -14,7 +14,7 @@ class MediaService {
     }
   }
 
-  /// Lấy Presigned URL để upload file (chẳng hạn như ảnh lên S3/MinIO)
+  /// Get a presigned URL for uploading files, such as images to S3/MinIO.
   Future<Map<String, dynamic>> getPresignedUrl(
     String fileName,
     String bucket,

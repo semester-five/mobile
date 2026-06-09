@@ -106,7 +106,7 @@ class _MySessionPageState extends State<MySessionPage> {
       final isActive = status.contains('ACTIVE') || status.contains('IN_USE');
       final isCompleted =
           status.contains('COMPLETED') ||
-          status.contains('CHECKED') ||
+          status.contains('CHECKED_OUT') ||
           status.contains('FINISHED');
 
       if (onlyActive) {
