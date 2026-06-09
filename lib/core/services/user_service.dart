@@ -18,13 +18,16 @@ class UserService extends ChangeNotifier {
   String? get accessToken => _session?.accessToken;
   String? get refreshToken => _session?.refreshToken;
   String get tokenType => _session?.tokenType ?? 'Bearer';
-  DateTime? get accessTokenExpiresAt =>
-      _session == null ? null : _session!.issuedAt.add(Duration(seconds: _session!.expiresIn));
+  DateTime? get accessTokenExpiresAt {
+    final session = _session;
+    return session?.issuedAt.add(Duration(seconds: session.expiresIn));
+  }
 
   bool get isLoggedIn => _session != null;
   bool get isAdmin => currentUser?.isAdmin ?? false;
   bool get isUser => currentUser?.isUser ?? false;
-  bool get canRefreshSession => refreshToken != null && refreshToken!.isNotEmpty;
+  bool get canRefreshSession =>
+      refreshToken != null && refreshToken!.isNotEmpty;
   bool get isAccessTokenExpired {
     final expiresAt = accessTokenExpiresAt;
     if (expiresAt == null) {

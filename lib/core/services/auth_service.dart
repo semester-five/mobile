@@ -10,7 +10,7 @@ import 'api_client.dart';
 class AuthService {
   final ApiClient _apiClient = ApiClient();
 
-  /// Đăng ký người dùng mới
+  /// Register a new user.
   Future<Map<String, dynamic>> register(Map<String, dynamic> data) async {
     final response = await _apiClient.post('/auths/register', body: data);
     if (response.statusCode == 201 || response.statusCode == 200) {
@@ -20,7 +20,7 @@ class AuthService {
     }
   }
 
-  /// Đăng nhập bằng Email / Mật khẩu
+  /// Log in with email and password.
   Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await _apiClient.post(
       '/auths/login',
@@ -36,7 +36,7 @@ class AuthService {
     }
   }
 
-  /// Đổi mật khẩu
+  /// Change password.
   Future<void> changePassword(Map<String, dynamic> data) async {
     final response = await _apiClient.put('/auths/change-password', body: data);
     if (response.statusCode != 200) {
@@ -44,12 +44,12 @@ class AuthService {
     }
   }
 
-  /// Khởi tạo phiên đăng nhập Google
+  /// Start a Google login session.
   Future<Map<String, dynamic>> googleLogin(String googleToken) async {
     final response = await _apiClient.post(
       '/auths/google',
       body: {
-        'token': googleToken, // tuỳ chỉnh key theo DTO của backend
+        'token': googleToken, // Adjust this key to match the backend DTO.
       },
     );
     if (response.statusCode == 200 || response.statusCode == 201) {
@@ -61,7 +61,7 @@ class AuthService {
     }
   }
 
-  /// Khởi tạo phiên đăng nhập Apple
+  /// Start an Apple login session.
   Future<Map<String, dynamic>> appleLogin(String appleToken) async {
     final response = await _apiClient.post(
       '/auths/apple',
@@ -91,7 +91,7 @@ class AuthService {
     }
   }
 
-  /// Lấy thông tin user hiện tại
+  /// Get the current user's profile.
   Future<Map<String, dynamic>> getMe() async {
     final response = await _apiClient.get('/auths/me');
     if (response.statusCode == 200) {
@@ -101,7 +101,7 @@ class AuthService {
     }
   }
 
-  /// Cập nhật thông tin hồ sơ
+  /// Update profile information.
   Future<UserModel> updateProfile(Map<String, dynamic> data) async {
     final endpoint =
         dotenv.env['PROFILE_UPDATE_ENDPOINT']?.trim().isNotEmpty == true
@@ -167,7 +167,7 @@ class AuthService {
     return UserModel.fromJson(merged);
   }
 
-  /// Lưu token xuống máy
+  /// Persist tokens locally.
   Future<void> _saveTokens(Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
     final tokenMap = data['token'] is Map<String, dynamic>
@@ -182,7 +182,7 @@ class AuthService {
     }
   }
 
-  /// Xoá token (Đăng xuất)
+  /// Clear tokens on logout.
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');

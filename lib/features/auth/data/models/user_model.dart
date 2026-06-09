@@ -41,7 +41,7 @@ class UserModel {
   bool get isAdmin => role.toUpperCase() == 'ADMIN';
   bool get isUser => role.toUpperCase() == 'USER';
 
-  // ✅ Getter thay vì lưu trong JSON
+  // Derived getter, not stored in JSON.
   String get fullName {
     return '$firstName $lastName'.trim();
   }

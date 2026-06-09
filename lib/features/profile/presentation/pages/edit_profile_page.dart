@@ -196,7 +196,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               _FieldLabel(label: 'Gender'),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedGender,
+                initialValue: _selectedGender,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
