@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:face_locker/core/services/locker_service.dart';
 import 'package:face_locker/features/locker/presentation/models/locker_item_view.dart';
 import 'package:face_locker/features/locker/presentation/pages/locker_detail_page.dart';
@@ -26,6 +28,7 @@ class _LockerListPageState extends State<LockerListPage> {
   static const List<String> _sizeOptions = ['SMALL', 'MEDIUM', 'LARGE'];
 
   final LockerService _lockerService = LockerService();
+  Timer? _syncTimer;
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -39,10 +42,14 @@ class _LockerListPageState extends State<LockerListPage> {
   void initState() {
     super.initState();
     _loadLockers(refresh: true);
+    _syncTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _loadLockers(silent: true);
+    });
   }
 
   @override
   void dispose() {
+    _syncTimer?.cancel();
     super.dispose();
   }
 
@@ -62,7 +69,7 @@ class _LockerListPageState extends State<LockerListPage> {
     return filters;
   }
 
-  Future<void> _loadLockers({bool refresh = false}) async {
+  Future<void> _loadLockers({bool refresh = false, bool silent = false}) async {
     if (_isLoading) {
       return;
     }
@@ -70,8 +77,10 @@ class _LockerListPageState extends State<LockerListPage> {
     final filters = _buildFilters();
 
     setState(() {
-      _errorMessage = null;
       _isLoading = true;
+      if (!silent) {
+        _errorMessage = null;
+      }
       if (refresh) {
         _lockers = [];
       }
@@ -114,9 +123,11 @@ class _LockerListPageState extends State<LockerListPage> {
         return;
       }
 
-      setState(() {
-        _errorMessage = 'Failed to load lockers. Error: $e';
-      });
+      if (!silent) {
+        setState(() {
+          _errorMessage = 'Failed to load lockers. Error: $e';
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -249,7 +260,7 @@ class _LockerListPageState extends State<LockerListPage> {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Bỏ trống bộ lọc sẽ trả về toàn bộ locker hiện có.',
+                        'Leave filters empty to show every available locker.',
                         style: TextStyle(color: Color(0xFF6B7280)),
                       ),
                       const SizedBox(height: 20),
@@ -436,7 +447,7 @@ class _LockerListPageState extends State<LockerListPage> {
               children: [
                 Expanded(
                   child: Text(
-                    'Bộ lọc và danh sách',
+                    'Filters and list',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -452,7 +463,7 @@ class _LockerListPageState extends State<LockerListPage> {
             ),
             const SizedBox(height: 6),
             const Text(
-              'Bỏ trống bộ lọc sẽ trả về toàn bộ locker hiện có.',
+              'Leave filters empty to show every available locker.',
               style: TextStyle(color: Color(0xFF6B7280)),
             ),
             const SizedBox(height: 12),
@@ -568,7 +579,7 @@ class _DropdownField<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       items: items,
       onChanged: onChanged,
       decoration: InputDecoration(
@@ -679,7 +690,7 @@ class _LockerCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              locker.doorState.isEmpty ? '-' : 'Door: ${locker.doorState}',
+              _buildStateText(locker),
               style: const TextStyle(
                 color: Color(0xFF6B7280),
                 fontSize: 11,
@@ -690,6 +701,12 @@ class _LockerCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _buildStateText(LockerItemView locker) {
+    final door = locker.doorState.isEmpty ? '-' : locker.doorState;
+    final item = locker.hasItem ? 'Has item' : 'Empty';
+    return 'Door: $door • $item';
   }
 
   Color _statusColor(String status) {

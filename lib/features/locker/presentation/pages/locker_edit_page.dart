@@ -1,4 +1,5 @@
 import 'package:face_locker/core/services/locker_service.dart';
+import 'package:face_locker/core/widgets/app_toast.dart';
 import 'package:face_locker/features/locker/presentation/models/locker_item_view.dart';
 import 'package:flutter/material.dart';
 
@@ -12,12 +13,14 @@ class LockerEditPage extends StatefulWidget {
 }
 
 class _LockerEditPageState extends State<LockerEditPage> {
+  static const List<String> _sizeOptions = ['SMALL', 'MEDIUM', 'LARGE'];
+
   final LockerService _lockerService = LockerService();
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _codeController;
   late TextEditingController _locationController;
-  late TextEditingController _sizeController;
+  String? _selectedSize;
 
   bool _isLoading = false;
 
@@ -30,14 +33,14 @@ class _LockerEditPageState extends State<LockerEditPage> {
     _locationController = TextEditingController(
       text: widget.locker?.location ?? '',
     );
-    _sizeController = TextEditingController(text: widget.locker?.size ?? '');
+    final initialSize = widget.locker?.size.toUpperCase();
+    _selectedSize = _sizeOptions.contains(initialSize) ? initialSize : null;
   }
 
   @override
   void dispose() {
     _codeController.dispose();
     _locationController.dispose();
-    _sizeController.dispose();
     super.dispose();
   }
 
@@ -50,7 +53,7 @@ class _LockerEditPageState extends State<LockerEditPage> {
       final data = {
         'code': _codeController.text.trim(),
         'location': _locationController.text.trim(),
-        'size': _sizeController.text.trim(),
+        'size': _selectedSize,
         'openUrl':
             'https://api.example.com/lockers/${_codeController.text.trim()}/open',
         'closeUrl':
@@ -61,31 +64,35 @@ class _LockerEditPageState extends State<LockerEditPage> {
 
       if (_isEditing) {
         await _lockerService.updateLocker(widget.locker!.id, data);
-        if (mounted)
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Locker updated successfully'),
-              backgroundColor: Colors.green,
-            ),
+        if (mounted) {
+          AppToast.success(
+            context,
+            title: 'Locker saved',
+            message: 'Changes were updated successfully.',
           );
+        }
       } else {
         await _lockerService.createLocker(data);
-        if (mounted)
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Locker created successfully'),
-              backgroundColor: Colors.green,
-            ),
+        if (mounted) {
+          AppToast.success(
+            context,
+            title: 'Locker created',
+            message: 'The new locker is ready to use.',
           );
+        }
       }
 
-      if (mounted)
+      if (mounted) {
         Navigator.pop(context, true); // Pop and return true to trigger refresh
+      }
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      if (mounted) {
+        AppToast.error(
+          context,
+          title: _isEditing ? 'Save failed' : 'Create failed',
+          message: '$e',
         );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -119,22 +126,17 @@ class _LockerEditPageState extends State<LockerEditPage> {
     try {
       await _lockerService.deleteLocker(widget.locker!.id);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Locker deleted'),
-            backgroundColor: Colors.green,
-          ),
+        AppToast.success(
+          context,
+          title: 'Locker deleted',
+          message: 'The locker was removed.',
         );
         Navigator.pop(context, true);
       }
     } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Delete failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      if (mounted) {
+        AppToast.error(context, title: 'Delete failed', message: '$e');
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -177,7 +179,7 @@ class _LockerEditPageState extends State<LockerEditPage> {
                     'e.g., Floor 1 - Zone A',
                   ),
                   const SizedBox(height: 16),
-                  _buildTextField('Size', _sizeController, 'e.g., Medium'),
+                  _buildSizeDropdown(),
                   const SizedBox(height: 32),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _handleSave,
@@ -225,8 +227,10 @@ class _LockerEditPageState extends State<LockerEditPage> {
   Widget _buildTextField(
     String label,
     TextEditingController controller,
-    String hint,
-  ) {
+    String hint, {
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -241,6 +245,7 @@ class _LockerEditPageState extends State<LockerEditPage> {
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
+          keyboardType: keyboardType,
           decoration: InputDecoration(
             hintText: hint,
             filled: true,
@@ -258,8 +263,57 @@ class _LockerEditPageState extends State<LockerEditPage> {
               borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
             ),
           ),
+          validator:
+              validator ??
+              (value) => value == null || value.trim().isEmpty
+                  ? 'Required field'
+                  : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSizeDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Size',
+          style: TextStyle(
+            color: Color(0xFF6B7280),
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          initialValue: _selectedSize,
+          items: _sizeOptions
+              .map(
+                (size) =>
+                    DropdownMenuItem<String>(value: size, child: Text(size)),
+              )
+              .toList(),
+          onChanged: (value) => setState(() => _selectedSize = value),
+          decoration: InputDecoration(
+            hintText: 'Select size',
+            filled: true,
+            fillColor: const Color(0xFFF9FAFB),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+            ),
+          ),
           validator: (value) =>
-              value == null || value.trim().isEmpty ? 'Required field' : null,
+              value == null || value.isEmpty ? 'Required field' : null,
         ),
       ],
     );

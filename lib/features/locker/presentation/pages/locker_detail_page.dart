@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:face_locker/core/services/locker_service.dart';
 import 'package:face_locker/features/locker/presentation/models/locker_item_view.dart';
 import 'package:face_locker/features/locker/presentation/pages/locker_action_page.dart';
@@ -15,6 +17,7 @@ class LockerDetailPage extends StatefulWidget {
 
 class _LockerDetailPageState extends State<LockerDetailPage> {
   final LockerService _lockerService = LockerService();
+  Timer? _syncTimer;
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -24,25 +27,40 @@ class _LockerDetailPageState extends State<LockerDetailPage> {
   void initState() {
     super.initState();
     _loadLocker();
+    _syncTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _loadLocker(silent: true);
+    });
   }
 
-  Future<void> _loadLocker() async {
+  @override
+  void dispose() {
+    _syncTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _loadLocker({bool silent = false}) async {
     if (_isLoading) {
       return;
     }
 
     setState(() {
-      _isLoading = true;
-      _errorMessage = null;
+      if (!silent) {
+        _isLoading = true;
+        _errorMessage = null;
+      }
     });
 
     try {
-      final response = await _lockerService.getLockerById(widget.lockerId);
+      final response = await _lockerService.getSyncedLockerStatus(
+        widget.lockerId,
+      );
       final data = response['data'];
       final lockerJson = data is Map<String, dynamic> ? data : response;
       _locker = LockerItemView.fromJson(lockerJson);
     } catch (error) {
-      _errorMessage = 'Failed to load locker details.';
+      if (!silent) {
+        _errorMessage = 'Failed to load locker details.';
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -98,7 +116,7 @@ class _LockerDetailPageState extends State<LockerDetailPage> {
             else if (_errorMessage != null)
               _ErrorState(message: _errorMessage!, onRetry: _loadLocker)
             else if (_locker != null)
-                _LockerHeader(locker: _locker!)
+              _LockerHeader(locker: _locker!)
             else
               const Center(
                 child: Text(
@@ -107,45 +125,50 @@ class _LockerDetailPageState extends State<LockerDetailPage> {
                 ),
               ),
             const SizedBox(height: 32),
-              if (_locker != null) ...[
-                const Text(
-                  'Locker Info',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                _InfoGrid(locker: _locker!),
-                const SizedBox(height: 24),
-                const Text(
-                  'Hardware & URLs',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                _InfoCard(
-                  label: 'ESP32 ID',
-                  value: _locker!.espId.isEmpty ? '-' : _locker!.espId,
-                ),
-                const SizedBox(height: 12),
-                _InfoCard(
-                  label: 'Open URL',
-                  value: _locker!.openUrl.isEmpty ? '-' : _locker!.openUrl,
-                ),
-                const SizedBox(height: 12),
-                _InfoCard(
-                  label: 'Close URL',
-                  value: _locker!.closeUrl.isEmpty ? '-' : _locker!.closeUrl,
-                ),
-                const SizedBox(height: 12),
-                _InfoCard(
-                  label: 'Created At',
-                  value: _formatDate(_locker!.createdAt),
-                ),
-                const SizedBox(height: 12),
-                _InfoCard(
-                  label: 'Updated At',
-                  value: _formatDate(_locker!.updatedAt),
-                ),
-                const SizedBox(height: 40),
-              ],
+            if (_locker != null) ...[
+              const Text(
+                'Locker Info',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              _InfoGrid(locker: _locker!),
+              const SizedBox(height: 24),
+              const Text(
+                'Hardware & URLs',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              _InfoCard(
+                label: 'ESP32 ID',
+                value: _locker!.espId.isEmpty ? '-' : _locker!.espId,
+              ),
+              const SizedBox(height: 12),
+              _InfoCard(
+                label: 'Cabinet Number',
+                value: _locker!.cabinetNumber.toString(),
+              ),
+              const SizedBox(height: 12),
+              _InfoCard(
+                label: 'Open URL',
+                value: _locker!.openUrl.isEmpty ? '-' : _locker!.openUrl,
+              ),
+              const SizedBox(height: 12),
+              _InfoCard(
+                label: 'Close URL',
+                value: _locker!.closeUrl.isEmpty ? '-' : _locker!.closeUrl,
+              ),
+              const SizedBox(height: 12),
+              _InfoCard(
+                label: 'Created At',
+                value: _formatDate(_locker!.createdAt),
+              ),
+              const SizedBox(height: 12),
+              _InfoCard(
+                label: 'Updated At',
+                value: _formatDate(_locker!.updatedAt),
+              ),
+              const SizedBox(height: 40),
+            ],
             ElevatedButton(
               onPressed: _locker == null
                   ? null
@@ -206,6 +229,14 @@ class _LockerHeader extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(_buildMeta(locker), style: const TextStyle(color: Colors.grey)),
+          const SizedBox(height: 6),
+          Text(
+            locker.hasItem ? 'Has item inside' : 'No item detected',
+            style: const TextStyle(
+              color: Color(0xFF4B5563),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -215,7 +246,7 @@ class _LockerHeader extends StatelessWidget {
     final location = locker.location.isEmpty ? '-' : locker.location;
     final size = locker.size.isEmpty ? '-' : locker.size;
     final doorState = locker.doorState.isEmpty ? '-' : locker.doorState;
-    return '$location • Size $size • Door: $doorState';
+    return '$location • Size $size • Cabinet ${locker.cabinetNumber} • Door: $doorState';
   }
 
   Color _statusColor(String status) {
@@ -243,14 +274,20 @@ class _InfoGrid extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _InfoCard(label: 'Code', value: locker.code.isEmpty ? '-' : locker.code),
+        _InfoCard(
+          label: 'Code',
+          value: locker.code.isEmpty ? '-' : locker.code,
+        ),
         const SizedBox(height: 12),
         _InfoCard(
           label: 'Location',
           value: locker.location.isEmpty ? '-' : locker.location,
         ),
         const SizedBox(height: 12),
-        _InfoCard(label: 'Size', value: locker.size.isEmpty ? '-' : locker.size),
+        _InfoCard(
+          label: 'Size',
+          value: locker.size.isEmpty ? '-' : locker.size,
+        ),
         const SizedBox(height: 12),
         _InfoCard(
           label: 'Status',
@@ -261,6 +298,8 @@ class _InfoGrid extends StatelessWidget {
           label: 'Door State',
           value: locker.doorState.isEmpty ? '-' : locker.doorState,
         ),
+        const SizedBox(height: 12),
+        _InfoCard(label: 'Item Sensor', value: locker.hasItem ? 'YES' : 'NO'),
         const SizedBox(height: 12),
         _InfoCard(label: 'Locker ID', value: locker.id),
       ],
