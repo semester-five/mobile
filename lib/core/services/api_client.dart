@@ -43,7 +43,7 @@ class ApiClient {
       }
 
       if (Platform.isIOS) {
-        return '192.168.1.2';
+        return 'localhost';
       }
     } catch (_) {}
 

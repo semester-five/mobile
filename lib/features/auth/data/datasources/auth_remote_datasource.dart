@@ -62,7 +62,11 @@ class AuthRemoteDataSource {
     );
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      _logHttpSuccess(method: method, uri: uri, statusCode: response.statusCode);
+      _logHttpSuccess(
+        method: method,
+        uri: uri,
+        statusCode: response.statusCode,
+      );
       final responseData = jsonDecode(response.body);
       return LoginResponseDto.fromJson(responseData);
     }
@@ -99,7 +103,11 @@ class AuthRemoteDataSource {
     );
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      _logHttpSuccess(method: method, uri: uri, statusCode: response.statusCode);
+      _logHttpSuccess(
+        method: method,
+        uri: uri,
+        statusCode: response.statusCode,
+      );
       return;
     }
 
@@ -127,22 +135,22 @@ class AuthRemoteDataSource {
   }
 
   String get _defaultHost {
-  if (kIsWeb) {
+    if (kIsWeb) {
+      return 'localhost';
+    }
+
+    try {
+      if (Platform.isAndroid) {
+        return '10.0.2.2';
+      }
+
+      if (Platform.isIOS) {
+        return '192.168.1.2'; // Local Mac IP address.
+      }
+    } catch (_) {}
+
     return 'localhost';
   }
-
-  try {
-    if (Platform.isAndroid) {
-      return '10.0.2.2';
-    }
-
-    if (Platform.isIOS) {
-      return '192.168.1.2'; // 👈 IP máy Mac của bạn
-    }
-  } catch (_) {}
-
-  return 'localhost';
-}
 
   String _extractErrorMessage(http.Response response) {
     try {

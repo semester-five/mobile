@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:face_locker/features/session/presentation/models/session_item_view.dart';
+import 'package:face_locker/features/session/presentation/pages/session_detail_page.dart';
 
 class CompletedSessionsPage extends StatelessWidget {
   const CompletedSessionsPage({super.key, required this.sessions});
@@ -24,6 +25,7 @@ class CompletedSessionsPage extends StatelessWidget {
       itemBuilder: (context, index) {
         final session = sessions[index];
         return _CompletedSessionCard(
+          session: session,
           lockerCode: session.lockerCode,
           dateTime: _formatDateTime(session.checkOutAt ?? session.createdAt),
           duration: _formatDuration(session.checkInAt, session.checkOutAt),
@@ -58,76 +60,98 @@ class CompletedSessionsPage extends StatelessWidget {
 
 class _CompletedSessionCard extends StatelessWidget {
   const _CompletedSessionCard({
+    required this.session,
     required this.lockerCode,
     required this.dateTime,
     required this.duration,
   });
 
+  final SessionItemView session;
   final String lockerCode;
   final String dateTime;
   final String duration;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                lockerCode,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF3),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'Completed',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF166534),
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => SessionDetailPage(session: session),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    lockerCode.isEmpty ? '-' : lockerCode,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1F2937),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                dateTime,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-              ),
-              Text(
-                'Duration: $duration',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF6B7280),
-                  fontWeight: FontWeight.w500,
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF3),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'Completed',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF166534),
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Color(0xFF94A3B8),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  dateTime,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+                Text(
+                  'Duration: $duration',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF6B7280),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

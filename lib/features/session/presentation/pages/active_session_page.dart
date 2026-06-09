@@ -1,5 +1,5 @@
 import 'package:face_locker/features/session/presentation/models/session_item_view.dart';
-import 'package:face_locker/features/session/presentation/pages/detail_active_session_page.dart';
+import 'package:face_locker/features/session/presentation/pages/session_detail_page.dart';
 import 'package:flutter/material.dart';
 
 class ActiveSessionsPage extends StatelessWidget {
@@ -42,7 +42,7 @@ class _ActiveSessionCard extends StatelessWidget {
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => DetailActiveSessionPage(session: session),
+            builder: (context) => SessionDetailPage(session: session),
           ),
         );
       },

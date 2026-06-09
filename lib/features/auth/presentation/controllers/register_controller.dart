@@ -31,7 +31,9 @@ class RegisterController extends ChangeNotifier {
     required String password,
   }) async {
     if (_isLoading) {
-      _debugLog('Ignored register call because another request is in progress.');
+      _debugLog(
+        'Ignored register call because another request is in progress.',
+      );
       return false;
     }
 

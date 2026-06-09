@@ -1,39 +1,19 @@
 import 'package:face_locker/core/services/session_service.dart';
-import 'package:face_locker/features/qrcode/presentation/controllers/qrcode_controller.dart';
+import 'package:face_locker/core/theme/app_theme.dart';
+import 'package:face_locker/core/widgets/app_toast.dart';
 import 'package:face_locker/features/qrcode/presentation/pages/qr_scanner_page.dart';
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 class QrcodePage extends StatefulWidget {
-  const QrcodePage({super.key, this.controller});
-
-  final QrcodeController? controller;
+  const QrcodePage({super.key});
 
   @override
   State<QrcodePage> createState() => _QrcodePageState();
 }
 
 class _QrcodePageState extends State<QrcodePage> {
-  late final QrcodeController _controller;
-  late final bool _ownsController;
   final SessionService _sessionService = SessionService();
   bool _isProcessingScan = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _ownsController = widget.controller == null;
-    _controller = widget.controller ?? QrcodeController();
-    _controller.loadQrToken();
-  }
-
-  @override
-  void dispose() {
-    if (_ownsController) {
-      _controller.dispose();
-    }
-    super.dispose();
-  }
 
   Future<void> _openScanner() async {
     final result = await Navigator.of(context).push<String>(
@@ -42,30 +22,19 @@ class _QrcodePageState extends State<QrcodePage> {
 
     if (!mounted || result == null) return;
 
-    final token = result.trim();
-    if (token == 'generate-qr') {
-      await _controller.loadQrToken();
-      return;
-    }
+    final scannedValue = result.trim();
+    if (scannedValue.isEmpty) return;
 
     if (_isProcessingScan) return;
 
     setState(() => _isProcessingScan = true);
 
     try {
-      // ── TEST MODE: mock response cho token "abcdef" ──────────────
-      if (token == 'cico-locker') {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('[TEST] CICO success for locker TEST-001'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        return;
+      final generatedToken = await _sessionService.generateQRCodeToken();
+      final token = generatedToken['token']?.toString().trim();
+      if (token == null || token.isEmpty) {
+        throw Exception('QR token response is missing token');
       }
-      // ─────────────────────────────────────────────────────────────
-
       final response = await _sessionService.cicoByQRCode(token);
       final lockerCode =
           response['lockerCode'] ??
@@ -75,18 +44,16 @@ class _QrcodePageState extends State<QrcodePage> {
       final status =
           response['status'] ?? response['sessionStatus'] ?? response['state'];
       final message = lockerCode != null && lockerCode.toString().isNotEmpty
-          ? 'CICO success for locker $lockerCode'
-          : 'CICO success${status != null ? ' ($status)' : ''}';
+          ? 'Locker $lockerCode'
+          : status != null
+          ? '$status'
+          : null;
 
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      AppToast.success(context, title: 'CICO completed', message: message);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('CICO failed: $error')));
+      AppToast.error(context, title: 'CICO failed', message: '$error');
     } finally {
       if (mounted) setState(() => _isProcessingScan = false);
     }
@@ -94,174 +61,161 @@ class _QrcodePageState extends State<QrcodePage> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        final qrToken = _controller.qrTokenResponse;
-        final remainingSeconds = _controller.remainingSeconds;
-
-        return Scaffold(
-          backgroundColor: Colors.white,
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            centerTitle: true,
-            title: const Text(
-              'QR Check-in',
-              style: TextStyle(
-                color: Colors.black,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          body: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 360),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: SizedBox(
-                        width: 250,
-                        height: 250,
-                        child: _controller.isLoading
-                            ? const Center(child: CircularProgressIndicator())
-                            : qrToken == null
-                            ? Center(
-                                child: Icon(
-                                  Icons.qr_code_2,
-                                  size: 120,
-                                  color: Colors.grey[400],
-                                ),
-                              )
-                            : Container(
-                                color: Colors.white,
-                                padding: const EdgeInsets.all(12),
-                                child: QrImageView(
-                                  data: qrToken.token,
-                                  version: QrVersions.auto,
-                                  size: 226,
-                                  backgroundColor: Colors.white,
-                                  eyeStyle: const QrEyeStyle(
-                                    eyeShape: QrEyeShape.square,
-                                    color: Colors.black,
-                                  ),
-                                  dataModuleStyle: const QrDataModuleStyle(
-                                    dataModuleShape: QrDataModuleShape.square,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    if (_controller.errorMessage != null) ...[
-                      Text(
-                        _controller.errorMessage!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    if (qrToken != null) ...[
-                      Text(
-                        'Expires at: ${_formatDateTime(qrToken.expiresAt)}',
-                        style: TextStyle(color: Colors.grey[700], fontSize: 13),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Auto refresh in ${_formatRemainingSeconds(remainingSeconds)}',
-                        style: TextStyle(color: Colors.grey[700], fontSize: 13),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    Text(
-                      qrToken == null
-                          ? 'Tap refresh to generate your check-in QR code.'
-                          : 'Show this code to the locker camera',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton.icon(
-                        onPressed: _controller.isLoading
-                            ? null
-                            : _controller.loadQrToken,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Generate new QR'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4A90E2),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: OutlinedButton.icon(
-                        onPressed: _controller.isLoading || _isProcessingScan
-                            ? null
-                            : _openScanner,
-                        icon: const Icon(Icons.qr_code_scanner),
-                        label: const Text('Scan QR to check-in/out'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF4A90E2),
-                          side: const BorderSide(color: Color(0xFF4A90E2)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+    return Scaffold(
+      appBar: AppBar(title: const Text('Scan QR')),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const _SectionHeader(
+                  icon: Icons.qr_code_scanner_rounded,
+                  title: 'Scan QR',
+                  subtitle: 'Scan locker QR or CICO token',
                 ),
-              ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: AppTheme.softPanel(),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 220,
+                        height: 220,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppTheme.border),
+                        ),
+                        child: const Icon(
+                          Icons.qr_code_scanner_rounded,
+                          size: 112,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      const _InlineMessage(
+                        icon: Icons.camera_alt_outlined,
+                        color: AppTheme.muted,
+                        text: 'Use the phone camera to scan a locker QR.',
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: _isProcessingScan ? null : _openScanner,
+                  icon: _isProcessingScan
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.qr_code_scanner_rounded, size: 18),
+                  label: const Text('Scan locker QR / CICO'),
+                ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
+}
 
-  String _formatDateTime(DateTime dateTime) {
-    final local = dateTime.toLocal();
-    final hour = local.hour.toString().padLeft(2, '0');
-    final minute = local.minute.toString().padLeft(2, '0');
-    final day = local.day.toString().padLeft(2, '0');
-    final month = local.month.toString().padLeft(2, '0');
-    return '$day/$month/${local.year} $hour:$minute';
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: const Color(0xFFDBEAFE),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppTheme.primary),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: AppTheme.text,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: AppTheme.muted,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
+}
 
-  String _formatRemainingSeconds(int totalSeconds) {
-    final minutes = totalSeconds ~/ 60;
-    final seconds = totalSeconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+class _InlineMessage extends StatelessWidget {
+  const _InlineMessage({
+    required this.icon,
+    required this.color,
+    required this.text,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

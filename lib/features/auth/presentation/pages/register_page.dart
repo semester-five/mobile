@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:face_locker/core/widgets/app_toast.dart';
 import 'package:face_locker/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:face_locker/features/auth/repositories/auth_repository.dart';
 import 'package:face_locker/features/auth/presentation/controllers/register_controller.dart';
@@ -74,19 +75,19 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Register success. Please login.')),
+      AppToast.success(
+        context,
+        title: 'Account created',
+        message: 'You can sign in now.',
       );
       Navigator.of(context).pop();
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _controller.errorMessage ?? 'Register failed. Please try again.',
-        ),
-      ),
+    AppToast.error(
+      context,
+      title: 'Register failed',
+      message: _controller.errorMessage ?? 'Please check your information.',
     );
   }
 
