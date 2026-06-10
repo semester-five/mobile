@@ -59,7 +59,7 @@ class _LockerActionPageState extends State<LockerActionPage> {
         AppToast.error(
           context,
           title: 'Sync failed',
-          message: 'Could not load the latest locker state.',
+          message: 'State unavailable.',
         );
       }
     }
@@ -88,7 +88,7 @@ class _LockerActionPageState extends State<LockerActionPage> {
       AppToast.success(
         context,
         title: 'Locker updated',
-        message: 'Status and door state were synced.',
+        message: 'State synced.',
       );
       await _loadSyncedStatus(silent: true);
     } catch (error) {
@@ -130,7 +130,7 @@ class _LockerActionPageState extends State<LockerActionPage> {
       AppToast.success(
         context,
         title: 'Locker opened',
-        message: 'Open command was sent to backend.',
+        message: 'Command sent.',
       );
     } catch (error) {
       if (!mounted) {

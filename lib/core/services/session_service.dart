@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'api_client.dart';
 
 class SessionService {
@@ -46,7 +47,7 @@ class SessionService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     } else {
-      throw Exception('QR CICO failed: ${response.body}');
+      throw Exception(_extractSessionError(response.body, 'QR CICO failed'));
     }
   }
 
@@ -101,5 +102,28 @@ class SessionService {
     } else {
       throw Exception('Failed to get active sessions: ${response.body}');
     }
+  }
+
+  String _extractSessionError(String responseBody, String fallback) {
+    try {
+      final decoded = jsonDecode(responseBody);
+      if (decoded is Map<String, dynamic>) {
+        final code = decoded['code']?.toString();
+        final message = decoded['message']?.toString();
+
+        if (code == 'NO_AVAILABLE_LOCKER' ||
+            message?.toLowerCase().contains('no available locker') == true) {
+          return 'No available locker';
+        }
+
+        if (message != null && message.trim().isNotEmpty) {
+          return message.trim();
+        }
+      }
+    } catch (_) {
+      // Fall through to the short fallback below.
+    }
+
+    return fallback;
   }
 }

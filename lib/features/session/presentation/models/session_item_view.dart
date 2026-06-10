@@ -25,7 +25,10 @@ class SessionItemView {
     return SessionItemView(
       id: _readString(json['id'] ?? json['sessionId']),
       lockerCode: _readString(
-        json['lockerCode'] ?? json['locker_code'] ?? locker?['code'],
+        json['lockerCode'] ??
+            json['locker_code'] ??
+            locker?['lockerCode'] ??
+            locker?['code'],
       ),
       lockerLocation: _readString(
         json['lockerLocation'] ??

@@ -68,7 +68,7 @@ class _LockerEditPageState extends State<LockerEditPage> {
           AppToast.success(
             context,
             title: 'Locker saved',
-            message: 'Changes were updated successfully.',
+            message: 'Changes updated.',
           );
         }
       } else {
@@ -77,7 +77,7 @@ class _LockerEditPageState extends State<LockerEditPage> {
           AppToast.success(
             context,
             title: 'Locker created',
-            message: 'The new locker is ready to use.',
+            message: 'Ready to use.',
           );
         }
       }

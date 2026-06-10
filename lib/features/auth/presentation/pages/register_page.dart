@@ -78,7 +78,7 @@ class _RegisterPageState extends State<RegisterPage> {
       AppToast.success(
         context,
         title: 'Account created',
-        message: 'You can sign in now.',
+        message: 'Sign in now.',
       );
       Navigator.of(context).pop();
       return;
