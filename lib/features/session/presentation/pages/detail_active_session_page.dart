@@ -80,7 +80,7 @@ class _DetailActiveSessionPageState extends State<DetailActiveSessionPage> {
       AppToast.warning(
         context,
         title: 'Reason required',
-        message: 'Please enter a reason before continuing.',
+        message: 'Enter a reason.',
       );
       return;
     }
@@ -95,7 +95,7 @@ class _DetailActiveSessionPageState extends State<DetailActiveSessionPage> {
         AppToast.success(
           context,
           title: 'Checked out',
-          message: 'The active session was closed.',
+          message: 'Session closed.',
         );
         Navigator.of(context).pop(true); // Return true to refresh parent
       }

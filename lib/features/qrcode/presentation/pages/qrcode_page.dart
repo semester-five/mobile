@@ -36,27 +36,40 @@ class _QrcodePageState extends State<QrcodePage> {
         throw Exception('QR token response is missing token');
       }
       final response = await _sessionService.cicoByQRCode(token);
-      final lockerCode =
-          response['lockerCode'] ??
-          response['locker']?['code'] ??
-          response['locker_code'] ??
-          response['lockerId'];
-      final status =
-          response['status'] ?? response['sessionStatus'] ?? response['state'];
-      final message = lockerCode != null && lockerCode.toString().isNotEmpty
-          ? 'Locker $lockerCode'
-          : status != null
-          ? '$status'
-          : null;
+      final lockerCode = _readLockerCode(response);
+      final message = lockerCode.isNotEmpty
+          ? 'Opened locker $lockerCode'
+          : 'Locker opened';
 
       if (!mounted) return;
-      AppToast.success(context, title: 'CICO completed', message: message);
+      AppToast.success(context, title: 'QR scanned', message: message);
     } catch (error) {
       if (!mounted) return;
-      AppToast.error(context, title: 'CICO failed', message: '$error');
+      AppToast.error(context, title: _displayError(error));
     } finally {
       if (mounted) setState(() => _isProcessingScan = false);
     }
+  }
+
+  String _displayError(Object error) {
+    return error.toString().replaceFirst(RegExp(r'^Exception:\s*'), '').trim();
+  }
+
+  String _readLockerCode(Map<String, dynamic> response) {
+    final locker = response['locker'];
+    final lockerCode =
+        response['lockerCode'] ??
+        response['locker_code'] ??
+        response['lockerId'] ??
+        response['locker_id'] ??
+        (locker is Map<String, dynamic>
+            ? locker['lockerCode'] ??
+                  locker['code'] ??
+                  locker['id'] ??
+                  locker['locker_id']
+            : null);
+
+    return lockerCode?.toString().trim() ?? '';
   }
 
   @override

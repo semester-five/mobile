@@ -85,31 +85,29 @@ class AppToast {
     Duration duration = const Duration(milliseconds: 2600),
   }) {
     final color = _color(type);
-    final cleanMessage = message?.trim();
+    final cleanTitle = _compactText(title);
+    final cleanMessage = _compactText(message);
     Flushbar<void>? flushbar;
 
     flushbar = Flushbar<void>(
       flushbarStyle: FlushbarStyle.FLOATING,
       flushbarPosition: FlushbarPosition.BOTTOM,
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 72),
       padding: EdgeInsets.zero,
-      borderRadius: BorderRadius.circular(10),
-      borderColor: color,
-      borderWidth: 1.5,
-      backgroundColor: _backgroundColor(type),
+      borderRadius: BorderRadius.circular(14),
+      backgroundColor: color,
       boxShadows: [
         BoxShadow(
-          color: color.withValues(alpha: 0.12),
-          blurRadius: 12,
-          offset: const Offset(0, 5),
+          color: color.withValues(alpha: 0.22),
+          blurRadius: 16,
+          offset: const Offset(0, 8),
         ),
       ],
       messageText: _ToastContent(
         type: type,
         color: color,
-        title: cleanMessage == null || cleanMessage.isEmpty
-            ? title
-            : '$title  $cleanMessage',
+        title: cleanTitle,
+        message: cleanMessage,
         actionLabel: actionLabel,
         onAction: onAction == null
             ? null
@@ -117,7 +115,6 @@ class AppToast {
                 flushbar?.dismiss();
                 onAction();
               },
-        onClose: () => flushbar?.dismiss(),
       ),
       duration: duration,
       animationDuration: const Duration(milliseconds: 180),
@@ -130,29 +127,28 @@ class AppToast {
     flushbar.show(context);
   }
 
+  static String? _compactText(String? value) {
+    final text = value?.trim();
+    if (text == null || text.isEmpty) {
+      return null;
+    }
+
+    return text
+        .replaceFirst(RegExp(r'^Exception:\s*'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
   static Color _color(AppToastType type) {
     switch (type) {
       case AppToastType.success:
-        return AppTheme.accent;
+        return const Color(0xFF12B76A);
       case AppToastType.error:
         return AppTheme.danger;
       case AppToastType.warning:
         return AppTheme.warning;
       case AppToastType.info:
         return AppTheme.primary;
-    }
-  }
-
-  static Color _backgroundColor(AppToastType type) {
-    switch (type) {
-      case AppToastType.success:
-        return const Color(0xFFEFFDFB);
-      case AppToastType.error:
-        return const Color(0xFFFFF1F4);
-      case AppToastType.warning:
-        return const Color(0xFFFFF8ED);
-      case AppToastType.info:
-        return const Color(0xFFEFF9FF);
     }
   }
 }
@@ -162,70 +158,89 @@ class _ToastContent extends StatelessWidget {
     required this.type,
     required this.color,
     required this.title,
-    required this.onClose,
+    this.message,
     this.actionLabel,
     this.onAction,
   });
 
   final AppToastType type;
   final Color color;
-  final String title;
+  final String? title;
+  final String? message;
   final String? actionLabel;
   final VoidCallback? onAction;
-  final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 26,
-            height: 26,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            child: Icon(_icon, size: 16, color: Colors.white),
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.35),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(_icon, size: 21, color: Colors.white),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 14),
           Expanded(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: color,
-                fontSize: 13.5,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (title != null && title!.isNotEmpty)
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      title!,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0,
+                      ),
+                    ),
+                  ),
+                if (message != null && message!.isNotEmpty) ...[
+                  if (title != null && title!.isNotEmpty)
+                    const SizedBox(height: 2),
+                  Text(
+                    message!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           if (actionLabel != null && onAction != null) ...[
-            const SizedBox(width: 6),
+            const SizedBox(width: 10),
             TextButton(
               onPressed: onAction,
               style: TextButton.styleFrom(
-                foregroundColor: color,
+                foregroundColor: Colors.white,
                 minimumSize: const Size(0, 28),
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-              ),
-              child: Text(
-                actionLabel!,
-                style: const TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w900,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                textStyle: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0,
                 ),
               ),
+              child: Text(actionLabel!),
             ),
           ],
-          IconButton(
-            onPressed: onClose,
-            tooltip: 'Dismiss',
-            icon: Icon(Icons.close_rounded, color: color, size: 21),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-          ),
         ],
       ),
     );
